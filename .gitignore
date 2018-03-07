@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+build_index
+
+#backup files
+*.hpp~
+
+#Misc.
+yelp_final_dataset
+yelp_index

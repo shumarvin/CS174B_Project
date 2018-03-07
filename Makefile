@@ -9,7 +9,7 @@ BINARIES=build_index
 
 all: ${BINARIES}
 
-build_index: src/main.o
+build_index: src/main.o src/fileReader.o
 	${CXX} $^ -o $@
 
 

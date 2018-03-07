@@ -1,16 +1,29 @@
+#include "fileReader.hpp"
 #include <iostream>
+#include <string>
+#include <cstdlib>
 
 int main(int argc, char**argv)
 {
-	if(argc < 5)
+	//check for invalid usage
+	if(argc < 3 || argc > 5 || argc == 4)
 	{
-		std::cerr<<"Usage: build index [text file] [index file] -p [page size]\n";
-		return 1;
+		std::cerr<<"Usage: build_index [text file] [index file] -p [page size]\n";
+		std::exit(1);
 	}
-
-	for(int i = 0; i < argc; i++)
+	
+	std::string input(argv[1]);
+	std::string output(argv[2]);
+	if(argc == 5)
 	{
-		std::cout<<argv[i]<<std::endl;
+		int page_size = strtol(argv[4], NULL, 10);
+		FileReader reader(input,output,page_size);
+		reader.parseFile();
+	}
+	else
+	{
+		FileReader reader(input,output,8096);
+		reader.parseFile();
 	}
 	return 0;
 }
