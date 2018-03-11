@@ -47,31 +47,15 @@ void FileReader::parseFile(){
   		//current document is first entry in words
   		std::string currentDoc = words[0];
     
-  		//first loop to get rid of docs that contain non-English chars
-  		for(size_t i = 1; i < words.size(); i++){
-  			std::string currentWord = words[i];
-        for(size_t j = 0; j < currentWord.length(); j++){
-          if(currentWord[j] < 33 || currentWord[j] > 126){
-            breakflag = 1;
-            //std::cout<<currentDoc<<" "<<currentWord<< " " <<currentWord[j]<<std::endl;
-            break; //break out of letter for loop
-          }
-        }
-        if(breakflag == 1) break; //break out of words for loop
-  		}
-      if(breakflag == 1) {
-        breakflag = 0;
-        continue; //continue to next line
-      }
-      //std::cout<<line<<std::endl;
-      //2nd loop to add valid English words to index
-      for(size_t i = 1; i < words.size(); i++){
-        std::string currentWord = words[i];
-        if(currentWord.length() > max.length()){
-          max = currentWord;
-          std::cout<<currentDoc<<" "<<currentWord<<std::endl;
-        }
-      }
+      	//std::cout<<line<<std::endl;
+      	//2nd loop to add valid English words to index
+      	for(size_t i = 1; i < words.size(); i++){
+	        std::string currentWord = words[i];
+	        if(currentWord.length() > max.length()){
+	          max = currentWord;
+	          std::cout<<currentDoc<<" "<<currentWord<<std::endl;
+	        }
+      	}
 
      //    int test = testhash(currentWord);
        
