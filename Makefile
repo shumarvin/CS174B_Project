@@ -9,7 +9,7 @@ BINARIES=build_index removeNonEnglish
 
 all: ${BINARIES}
 
-build_index: src/main.o src/fileReader.o
+build_index: src/main.o src/fileReader.o src/pageWriter.o
 	${CXX} $^ -o $@
 
 removeNonEnglish: src/removeNonEnglish.o
