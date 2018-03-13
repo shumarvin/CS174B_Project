@@ -18,7 +18,7 @@ void PageWriter::createNewPage(){
 	outputFile << currentPage<< " "<<std::endl;
 
 	//set header and index offsets
-	headerOffset = outputFile.tellp();
+	headerOffset = (int)outputFile.tellp()-1;
 	
 	outputFile.seekp(0, std::ios::end);
 	bucketOffset = outputFile.tellp();
@@ -41,14 +41,14 @@ void PageWriter::addNewWord(std::string word, std::string doc){
 		have to alter it if it decreases. For example, if the pageSize is 8096 
 		bytes, and the offset is 30, it will be represented as 0030
 	*/
-	int headerEntrySize = sizeof(word) + sizeof(',') + sizeof(pageSize) + sizeof(" ");
-	int nextBucketPagePointer = 000000;
-	int bucketSize = sizeof(word) + sizeof(nextBucketPagePointer) + sizeof(doc) + 2 * sizeof(' ');
+	int headerEntrySize = word.length() + sizeof(',') + sizeof(pageSize) + sizeof(" ");
+	int nextBucketPagePointer = 0;
+	int bucketSize = word.length() + sizeof(nextBucketPagePointer) + doc.length() + 2 * sizeof(' ') + sizeof('\n');
 
 	std::tuple<int,int> currentPageOffsets = pageOffsets.at(currentPage-1);
 
 	//if no room, make a new page
-	if(bucketSize + headerEntrySize > std::get<1>(currentPageOffsets) - std::get<0>(currentPageOffsets)){
+	if(bucketSize + headerEntrySize > std::get<1>(currentPageOffsets) - std::get<0>(currentPageOffsets) - 1){
 		createNewPage();
 		currentPageOffsets = pageOffsets.at(currentPage-1);
 	}
@@ -57,21 +57,22 @@ void PageWriter::addNewWord(std::string word, std::string doc){
 		Write header entry
 	*/
 	int newBucketOffset = std::get<1>(currentPageOffsets) - bucketSize;
-	outputFile.seekp(headerOffset-1, std::ios::beg);
-	int numZeroes = countDigits(newBucketOffset);
-	outputFile<< word<<","<<'0'*(countDigits(pageSize) - numZeroes) << newBucketOffset<<" ";
+
+	outputFile.seekp(headerOffset, std::ios::beg);
+	outputFile<< word<<","<<newBucketOffset<<" ";
 	headerOffset = outputFile.tellp();
 
 
 	/*
 		Write bucket entry
 	*/
-	outputFile.seekp(newBucketOffset,std::ios::end);
-	outputFile << word << " " << nextBucketPagePointer << " " << doc<<; 
+	outputFile.seekp(std::get<1>(currentPageOffsets),std::ios::end);
+	outputFile.seekp(-newBucketOffset, std::ios::cur);
 	bucketOffset = outputFile.tellp();
+	outputFile << word << " " << nextBucketPagePointer << " " << doc<<std::endl; 
 
 	//update pageOffsets vector
-	pageOffsets.at(currentPage-1) = std::tuple<int,int>(headerOffset, bucketOffset);
+	pageOffsets[currentPage-1] = std::tuple<int,int>(headerOffset, bucketOffset);
 }
 //count number of digits in num
 int PageWriter::countDigits(int num){

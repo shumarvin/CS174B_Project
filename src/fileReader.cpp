@@ -32,8 +32,7 @@ void FileReader::parseFile(){
   										std::istream_iterator<std::string>());
 
   		//current document is first entry in words
-  		std::string currentDoc = words[0];
-    
+  		std::string currentDoc = words[0].substr(3);
     	//loop to add words to index
     	for(size_t i = 1; i < words.size(); i++){
         std::string currentWord = words[i];
