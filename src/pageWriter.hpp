@@ -7,18 +7,21 @@
 #include <tuple>
 
 class PageWriter{
-private: 
+private:
 	std::ofstream& outputFile;
 	std::vector<std::tuple<int,int>> pageOffsets;
 	int pageSize, currentPage, headerOffset, bucketOffset;
+	std::string outputFileName;
 
 	int countDigits(int num);
 
 public:
-	PageWriter(std::ofstream &output, int page): outputFile(output), pageSize(page), currentPage(0), headerOffset(0), bucketOffset(0){}
+	PageWriter(std::ofstream &output, int page, std::string fileName):
+		outputFile(output), pageSize(page), outputFileName(fileName), currentPage(0), headerOffset(0), bucketOffset(0){}
 
 	void createNewPage();
 	void addNewWord(std::string word, std::string doc);
+	void addExistingWord(std::string word, std::string doc, int pageNum);
 	int getCurrentPage(){return currentPage;}
 };
 
