@@ -13,11 +13,11 @@ private:
 	int pageSize, currentPage, headerOffset, bucketOffset;
 	std::string outputFileName;
 
-	int countDigits(int num);
+	int countDigits(int number);
 
 public:
 	PageWriter(std::ofstream &output, int page, std::string fileName):
-		outputFile(output), pageSize(page), outputFileName(fileName), currentPage(0), headerOffset(0), bucketOffset(0){}
+		outputFile(output), pageSize(page), outputFileName(fileName), currentPage(-1), headerOffset(0), bucketOffset(0){}
 
 	void createNewPage();
 	void addNewWord(std::string word, std::string doc);
