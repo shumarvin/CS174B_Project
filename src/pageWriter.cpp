@@ -16,13 +16,13 @@ void PageWriter::createNewPage(){
 	outputFile << spaces;
 
 	//write in current page
-	outputFile.seekp(0);
+	outputFile.seekp(pageSize * currentPage);
 	outputFile << currentPage<< " "<<std::endl;
 
 	//set header and index offsets
 	headerOffset = (int)outputFile.tellp()-1;
 
-	outputFile.seekp(0, std::ios::end);
+	outputFile.seekp(pageSize * (currentPage+1));
 	bucketOffset = outputFile.tellp();
 	std::cout << "bucketOffset at page creation: " << bucketOffset << std::endl;
 
@@ -41,13 +41,13 @@ void PageWriter::addNewWord(std::string word, std::string doc){
 
 		Header Entry is the word, and its offset into the page, separated by a comma.
 	*/
-	int headerEntrySize = word.length() + sizeof(',') + sizeof(pageSize) + sizeof(" ");
-	// int nextBucketPagePointer = 10;
+	std::tuple<int,int> currentPageOffsets = pageOffsets.at(currentPage);
 	std::string nextBucketPagePointer = "0000000";
-	int bucketSize = word.length() + nextBucketPagePointer.length() + doc.length() + 2 * sizeof(' ') + sizeof('\n');
+	int bucketSize = word.length() + nextBucketPagePointer.length() + doc.length() + 2 * sizeof(" ") + sizeof('\n');
+	int newBucketOffset = std::get<1>(currentPageOffsets) - bucketSize;
+	int headerEntrySize = word.length() + sizeof(',') + std::to_string(newBucketOffset).length() + sizeof(" ");
 	std::cout << "bucketSize: " << bucketSize << ", for word: " << word << std::endl;
 
-	std::tuple<int,int> currentPageOffsets = pageOffsets.at(currentPage);
 
 	//if no room, make a new page
 	if(bucketSize + headerEntrySize > std::get<1>(currentPageOffsets) - std::get<0>(currentPageOffsets) - 1){
@@ -58,7 +58,7 @@ void PageWriter::addNewWord(std::string word, std::string doc){
 	/*
 		Write header entry
 	*/
-	int newBucketOffset = std::get<1>(currentPageOffsets) - bucketSize;
+	std::cout << "newBucketOffset after calc: " << newBucketOffset << std::endl;
 
 	outputFile.seekp(currentPage * pageSize + std::get<0>(currentPageOffsets));
 	outputFile<< word<<","<<newBucketOffset<<" "<< std::endl;
@@ -68,14 +68,14 @@ void PageWriter::addNewWord(std::string word, std::string doc){
 	/*
 		Write bucket entry
 	*/
-	outputFile.seekp(currentPage * pageSize + std::get<1>(currentPageOffsets));
-	outputFile.seekp(-bucketSize, std::ios::cur);
-	bucketOffset = outputFile.tellp();
-	std::cout << "bucketOffset: " << bucketOffset << ", for word: " << word << std::endl;
+	outputFile.seekp(currentPage * pageSize + newBucketOffset);
+	// outputFile.seekp(-bucketSize, std::ios::cur);
+	// bucketOffset = outputFile.tellp();
+	std::cout << "bucketOffset: " << newBucketOffset << ", for word: " << word << std::endl;
 	outputFile << word << " " << nextBucketPagePointer << " " << doc << std::endl;
 
 	//update pageOffsets vector
-	pageOffsets[currentPage] = std::tuple<int,int>(headerOffset, bucketOffset);
+	pageOffsets[currentPage] = std::tuple<int,int>(headerOffset, newBucketOffset);
 }
 /*
 	Adds an existing word to the index
@@ -87,14 +87,14 @@ void PageWriter::addExistingWord(std::string word, std::string doc, int pageNum)
 	*/
 
 	std::tuple<int,int> pageNumOffsets = pageOffsets.at(pageNum);
-	int bucketEntrySize = doc.length() + sizeof(' ');
+	int bucketEntrySize = doc.length() + sizeof(" ");
 
 	//Checking first line of pageNum for offset within page
 	std::ifstream inputFile(outputFileName);
 	inputFile.seekg(pageNum * pageSize);
 	std::string line;
 	getline(inputFile, line);
-	int locationOffsetPair = line.find(' ' + word + ',') + word.length() + 2;
+	int locationOffsetPair = line.find(" " + word + ',') + word.length() + 2;
 	std::string offsetInPage = "";
 	for (int i = locationOffsetPair; i < line.length(); i++) {
 		char temp = line[i];
@@ -109,26 +109,26 @@ void PageWriter::addExistingWord(std::string word, std::string doc, int pageNum)
 	inputFile.seekg(pageNum * pageSize + stoi(offsetInPage));
 	std::string thisSucks;
 	getline(inputFile, thisSucks);
-	int lbp = word.length() + 1;
-	std::string tempString = "";
-	for (int i = lbp; i < thisSucks.length(); i++) {
-		char temp = thisSucks[i];
-		if (temp == ' ') {
-			break;
-		} else {
-			tempString += temp;
+	std::istringstream CBSiss(thisSucks);
+	std::vector<std::string> currentBucketSplit((std::istream_iterator<std::string>(CBSiss)),
+			std::istream_iterator<std::string>());
+	for (size_t i = 2; i < currentBucketSplit.size(); i++) {
+		if (currentBucketSplit[i].compare(doc) == 0) {
+			// std::cout << word << " already exists for doc " << doc << std::endl;
+			return;
 		}
 	}
 	//If nextBucketPagePointer != 0, recursive call on next page
-	if (stoi(tempString) != 0) {
-		addExistingWord(word, doc, stoi(tempString));
+	if (stoi(currentBucketSplit[1]) != 0) {
+		addExistingWord(word, doc, stoi(currentBucketSplit[1]));
 	}
 
-	// Go back to beginning of the current page
+	//Update header entries to account for new bucket bytes
 	std::istringstream iss(line);
 	std::vector<std::string> tempHeaderVec((std::istream_iterator<std::string>(iss)),
 			std::istream_iterator<std::string>());
-	for (size_t i = 1; i < tempHeaderVec.size(); i++) {
+	// for (size_t i = 1; i < tempHeaderVec.size(); i++) {
+	for (size_t i = tempHeaderVec.size()-1; i >= 0; i--) {
 		std::string headerTuple = tempHeaderVec[i];
 		std::vector<std::string> tokens;
 	  std::string token;
@@ -138,13 +138,15 @@ void PageWriter::addExistingWord(std::string word, std::string doc, int pageNum)
 	  }
 		tokens[1] = std::to_string(stoi(tokens[1])-bucketEntrySize);
 		tempHeaderVec[i] = tokens[0] + ',' + tokens[1];
+		// Break if we have reached word,offset tuple of word
+		//  so we don't update any of the tuples after that tuple
 		if (tokens[0].compare(word) == 0) {
 			break;
 		}
 	}
 	line = "";
 	for (size_t i = 0; i < tempHeaderVec.size(); i++) {
-		line += tempHeaderVec[i] + ' ';
+		line += tempHeaderVec[i] + " ";
 	}
 
 	// If bucketEntry doesn't fit on current page,
@@ -167,8 +169,8 @@ void PageWriter::addExistingWord(std::string word, std::string doc, int pageNum)
 	while (getline(inputFile, currentBucket)) {
 		bucketVec.push_back(currentBucket);
 		// Check if bucket is for word, if so, break
-		if (word.compare(currentBucket.substr(0, currentBucket.find(' '))) == 0) {
-			bucketVec.back() = currentBucket + ' ' + doc;
+		if (word.compare(currentBucket.substr(0, currentBucket.find(" "))) == 0) {
+			bucketVec.back() = currentBucket + " " + doc;
 			break;
 		}
 	}
@@ -181,7 +183,7 @@ void PageWriter::addExistingWord(std::string word, std::string doc, int pageNum)
 	outputFile << newBucketBlock;
 	outputFile.seekp(pageSize * pageNum);
 	outputFile << line;
-	pageOffsets[currentPage] = std::tuple<int,int>(line.length(), bucketOffset - bucketEntrySize);
+	pageOffsets[currentPage] = std::tuple<int,int>(line.length(), std::get<1>(pageNumOffsets) - bucketEntrySize);
 }
 
 int PageWriter::countDigits(int number){

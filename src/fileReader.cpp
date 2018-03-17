@@ -36,14 +36,14 @@ void FileReader::parseFile(){
     	//loop to add words to index
     	for(size_t i = 1; i < words.size(); i++){
         std::string currentWord = words[i];
-
+        std::cout << currentWord << " in fileReader.cpp" << std::endl; 
         it = wordToPageMap.find(currentWord);
         if(it == wordToPageMap.end()){
           pageWriter.addNewWord(currentWord, currentDoc);
         	wordToPageMap.insert(std::pair<std::string, int>(currentWord, pageWriter.getCurrentPage()));
         }
         else{
-          pageWriter.addExistingWord(currentWord, currentDoc, it->second); 
+          pageWriter.addExistingWord(currentWord, currentDoc, it->second);
         }
     	}
   	}
