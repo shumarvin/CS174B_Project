@@ -1,6 +1,6 @@
 CXX=clang++
 
-CXXFLAGS= -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-unused-private-field -g
+CXXFLAGS= -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-unused-private-field -g -Ofast
 
 #change to this before final submission
 #CXXFLAGS= -std=c++11 -Wall -Wextra -Werror

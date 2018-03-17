@@ -33,11 +33,15 @@ void FileReader::parseFile(){
 
   		//current document is first entry in words
   		std::string currentDoc = words[0].substr(3);
+      std::cout << "Processing document: " << currentDoc << std::endl; 
     	//loop to add words to index
     	for(size_t i = 1; i < words.size(); i++){
         std::string currentWord = words[i];
-        std::cout << "--- " << currentWord << " in fileReader.cpp ---" << std::endl; 
-        pageWriter.printAllOffsets(); 
+        if (currentWord.length() > 256) {
+          continue;
+        }
+        // std::cout << "--- " << currentWord << " in fileReader.cpp ---" << std::endl;
+        pageWriter.printAllOffsets();
         it = wordToPageMap.find(currentWord);
         if(it == wordToPageMap.end()){
           pageWriter.addNewWord(currentWord, currentDoc);
@@ -46,7 +50,7 @@ void FileReader::parseFile(){
         else{
           pageWriter.addExistingWord(currentWord, currentDoc, it->second);
         }
-        std::cout << "--- End of adding word: " << currentWord << " ---\n" <<std::endl; 
+        // std::cout << "--- End of adding word: " << currentWord << " ---\n" <<std::endl;
     	}
   	}
   }
