@@ -14,15 +14,17 @@ private:
 	std::string outputFileName;
 
 	int countDigits(int number);
+	void checkWords(int pageNum); 
 
 public:
 	PageWriter(std::ofstream &output, int page, std::string fileName):
 		outputFile(output), pageSize(page), outputFileName(fileName), currentPage(-1), headerOffset(0), bucketOffset(0){}
 
 	void createNewPage();
-	void addNewWord(std::string word, std::string doc);
+	int addNewWord(std::string word, std::string doc);
 	void addExistingWord(std::string word, std::string doc, int pageNum);
 	int getCurrentPage(){return currentPage;}
+	void printAllOffsets(); 
 };
 
 
